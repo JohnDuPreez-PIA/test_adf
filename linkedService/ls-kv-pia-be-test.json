@@ -1,0 +1,12 @@
+{
+	"name": "ls-kv-pia-be-test",
+	"type": "Microsoft.DataFactory/factories/linkedservices",
+	"properties": {
+		"description": "Key Vault for ADF linked services / secrets",
+		"type": "AzureKeyVault",
+		"typeProperties": {
+			"baseUrl": "https://kv-pia-be-test.vault.azure.net/"
+		},
+		"annotations": []
+	}
+}

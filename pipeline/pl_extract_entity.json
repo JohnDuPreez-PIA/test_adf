@@ -1,0 +1,66 @@
+{
+	"name": "pl_extract_entity",
+	"properties": {
+		"activities": [
+			{
+				"name": "CallExtractFunction",
+				"type": "AzureFunctionActivity",
+				"dependsOn": [],
+				"policy": {
+					"timeout": "00:10:00",
+					"retry": 1,
+					"retryIntervalInSeconds": 60,
+					"secureOutput": false,
+					"secureInput": false
+				},
+				"userProperties": [],
+				"typeProperties": {
+					"functionName": "extract",
+					"body": {
+						"value": "@json(concat('{\"base_url\":\"', pipeline().parameters.p_BaseUrl, '\",\"select_fields\":\"', pipeline().parameters.p_SelectFields, '\",\"entity_name\":\"', pipeline().parameters.p_EntityName, '\",\"division\":', string(pipeline().parameters.p_Division), ',\"sleep_ms\":', string(pipeline().parameters.p_SleepMs), if(equals(pipeline().parameters.p_FilterExpr, ''), '', concat(',\"filter_expr\":\"', pipeline().parameters.p_FilterExpr, '\"')), if(equals(pipeline().parameters.p_ExtraHeaders, ''), '', concat(',\"extra_headers\":', pipeline().parameters.p_ExtraHeaders)), if(equals(pipeline().parameters.p_FinancialYear, 0), '', concat(',\"financial_year\":', string(pipeline().parameters.p_FinancialYear))), if(equals(pipeline().parameters.p_ModifiedSince, ''), '', concat(',\"modified_since\":\"', pipeline().parameters.p_ModifiedSince, '\"')), '}'))",
+						"type": "Expression"
+					},
+					"method": "POST"
+				},
+				"linkedServiceName": {
+					"referenceName": "ls_func_exactonline",
+					"type": "LinkedServiceReference"
+				}
+			}
+		],
+		"parameters": {
+			"p_BaseUrl": {
+				"type": "String"
+			},
+			"p_SelectFields": {
+				"type": "String"
+			},
+			"p_EntityName": {
+				"type": "String"
+			},
+			"p_Division": {
+				"type": "Int"
+			},
+			"p_FilterExpr": {
+				"type": "String"
+			},
+			"p_SleepMs": {
+				"type": "Int",
+				"defaultValue": 1001
+			},
+			"p_ExtraHeaders": {
+				"type": "String"
+			},
+			"p_FinancialYear": {
+				"type": "Int",
+				"defaultValue": 0
+			},
+			"p_ModifiedSince": {
+				"type": "String"
+			}
+		},
+		"annotations": [],
+		"lastPublishTime": "2026-02-17T13:29:23Z"
+	},
+	"type": "Microsoft.DataFactory/factories/pipelines"
+}

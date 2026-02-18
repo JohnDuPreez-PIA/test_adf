@@ -1,0 +1,7 @@
+{
+	"name": "DW01",
+	"properties": {
+		"type": "SelfHosted",
+		"description": "DW01 - PIA hosted server"
+	}
+}

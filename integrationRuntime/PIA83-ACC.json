@@ -1,0 +1,7 @@
+{
+	"name": "PIA83-ACC",
+	"properties": {
+		"type": "SelfHosted",
+		"description": "Accofisc IR"
+	}
+}

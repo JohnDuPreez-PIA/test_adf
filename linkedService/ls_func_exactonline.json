@@ -1,0 +1,19 @@
+{
+	"name": "ls_func_exactonline",
+	"type": "Microsoft.DataFactory/factories/linkedservices",
+	"properties": {
+		"type": "AzureFunction",
+		"typeProperties": {
+			"functionAppUrl": "https://func-exactonline-test.azurewebsites.net",
+			"functionKey": {
+				"type": "AzureKeyVaultSecret",
+				"store": {
+					"type": "LinkedServiceReference",
+					"referenceName": "ls-kv-pia-be-test"
+				},
+				"secretName": "ExactOnline-FunctionKey"
+			}
+		},
+		"annotations": []
+	}
+}

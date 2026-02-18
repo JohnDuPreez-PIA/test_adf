@@ -1,0 +1,377 @@
+{
+	"name": "pl-silverfin-production",
+	"properties": {
+		"description": "Production-ready pipeline that fetches Silverfin data and writes directly to Blob Storage via REST API. Processes one firm at a time, refreshes OAuth token once, then makes all API calls.",
+		"activities": [
+			{
+				"name": "Get Client ID",
+				"type": "WebActivity",
+				"dependsOn": [],
+				"policy": {
+					"timeout": "0.00:01:00",
+					"retry": 2,
+					"retryIntervalInSeconds": 30
+				},
+				"userProperties": [],
+				"typeProperties": {
+					"method": "GET",
+					"url": {
+						"value": "@concat('https://kv-pia-be-test.vault.azure.net/secrets/silverfin-', string(pipeline().parameters.firmId), '-client-id?api-version=7.0')",
+						"type": "Expression"
+					},
+					"authentication": {
+						"type": "MSI",
+						"resource": "https://vault.azure.net"
+					}
+				}
+			},
+			{
+				"name": "Get Client Secret",
+				"type": "WebActivity",
+				"dependsOn": [],
+				"policy": {
+					"timeout": "0.00:01:00",
+					"retry": 2,
+					"retryIntervalInSeconds": 30
+				},
+				"userProperties": [],
+				"typeProperties": {
+					"method": "GET",
+					"url": {
+						"value": "@concat('https://kv-pia-be-test.vault.azure.net/secrets/silverfin-', string(pipeline().parameters.firmId), '-client-secret?api-version=7.0')",
+						"type": "Expression"
+					},
+					"authentication": {
+						"type": "MSI",
+						"resource": "https://vault.azure.net"
+					}
+				}
+			},
+			{
+				"name": "Get Refresh Token",
+				"type": "WebActivity",
+				"dependsOn": [],
+				"policy": {
+					"timeout": "0.00:01:00",
+					"retry": 2,
+					"retryIntervalInSeconds": 30
+				},
+				"userProperties": [],
+				"typeProperties": {
+					"method": "GET",
+					"url": {
+						"value": "@concat('https://kv-pia-be-test.vault.azure.net/secrets/silverfin-', string(pipeline().parameters.firmId), '-refresh-token?api-version=7.0')",
+						"type": "Expression"
+					},
+					"authentication": {
+						"type": "MSI",
+						"resource": "https://vault.azure.net"
+					}
+				}
+			},
+			{
+				"name": "Get Redirect URI",
+				"type": "WebActivity",
+				"dependsOn": [],
+				"policy": {
+					"timeout": "0.00:01:00",
+					"retry": 2,
+					"retryIntervalInSeconds": 30
+				},
+				"userProperties": [],
+				"typeProperties": {
+					"method": "GET",
+					"url": {
+						"value": "@concat('https://kv-pia-be-test.vault.azure.net/secrets/silverfin-', string(pipeline().parameters.firmId), '-redirect-uri?api-version=7.0')",
+						"type": "Expression"
+					},
+					"authentication": {
+						"type": "MSI",
+						"resource": "https://vault.azure.net"
+					}
+				}
+			},
+			{
+				"name": "Refresh OAuth Token",
+				"type": "WebActivity",
+				"dependsOn": [
+					{
+						"activity": "Get Client ID",
+						"dependencyConditions": [
+							"Succeeded"
+						]
+					},
+					{
+						"activity": "Get Client Secret",
+						"dependencyConditions": [
+							"Succeeded"
+						]
+					},
+					{
+						"activity": "Get Refresh Token",
+						"dependencyConditions": [
+							"Succeeded"
+						]
+					},
+					{
+						"activity": "Get Redirect URI",
+						"dependencyConditions": [
+							"Succeeded"
+						]
+					}
+				],
+				"policy": {
+					"timeout": "0.00:02:00",
+					"retry": 1,
+					"retryIntervalInSeconds": 30
+				},
+				"userProperties": [],
+				"typeProperties": {
+					"method": "POST",
+					"headers": {
+						"Content-Type": "application/x-www-form-urlencoded"
+					},
+					"url": {
+						"value": "@concat('https://live.getsilverfin.com/f/', string(pipeline().parameters.firmId), '/oauth/token')",
+						"type": "Expression"
+					},
+					"body": {
+						"value": "@concat('grant_type=refresh_token&client_id=', activity('Get Client ID').output.value, '&client_secret=', activity('Get Client Secret').output.value, '&refresh_token=', activity('Get Refresh Token').output.value, '&redirect_uri=', encodeUriComponent(activity('Get Redirect URI').output.value))",
+						"type": "Expression"
+					}
+				}
+			},
+			{
+				"name": "Store New Refresh Token",
+				"type": "WebActivity",
+				"dependsOn": [
+					{
+						"activity": "Refresh OAuth Token",
+						"dependencyConditions": [
+							"Succeeded"
+						]
+					}
+				],
+				"policy": {
+					"timeout": "0.00:01:00",
+					"retry": 2,
+					"retryIntervalInSeconds": 30
+				},
+				"userProperties": [],
+				"typeProperties": {
+					"method": "PUT",
+					"headers": {
+						"Content-Type": "application/json"
+					},
+					"url": {
+						"value": "@concat('https://kv-pia-be-test.vault.azure.net/secrets/silverfin-', string(pipeline().parameters.firmId), '-refresh-token?api-version=7.0')",
+						"type": "Expression"
+					},
+					"body": {
+						"value": "@json(concat('{\"value\":\"', activity('Refresh OAuth Token').output.refresh_token, '\"}'))",
+						"type": "Expression"
+					},
+					"authentication": {
+						"type": "MSI",
+						"resource": "https://vault.azure.net"
+					}
+				}
+			},
+			{
+				"name": "Set Access Token",
+				"type": "SetVariable",
+				"dependsOn": [
+					{
+						"activity": "Store New Refresh Token",
+						"dependencyConditions": [
+							"Succeeded"
+						]
+					}
+				],
+				"policy": {
+					"secureOutput": false,
+					"secureInput": false
+				},
+				"userProperties": [],
+				"typeProperties": {
+					"variableName": "accessToken",
+					"value": {
+						"value": "@activity('Refresh OAuth Token').output.access_token",
+						"type": "Expression"
+					}
+				}
+			},
+			{
+				"name": "Lookup API Targets",
+				"type": "Lookup",
+				"dependsOn": [
+					{
+						"activity": "Set Access Token",
+						"dependencyConditions": [
+							"Succeeded"
+						]
+					}
+				],
+				"policy": {
+					"timeout": "0.00:10:00",
+					"retry": 2,
+					"retryIntervalInSeconds": 30
+				},
+				"userProperties": [],
+				"typeProperties": {
+					"source": {
+						"type": "JsonSource",
+						"storeSettings": {
+							"type": "AzureBlobStorageReadSettings",
+							"recursive": false
+						},
+						"formatSettings": {
+							"type": "JsonReadSettings"
+						}
+					},
+					"dataset": {
+						"referenceName": "ds-silverfin-lookup",
+						"type": "DatasetReference"
+					},
+					"firstRowOnly": false
+				}
+			},
+			{
+				"name": "Filter Records For This Firm",
+				"type": "Filter",
+				"dependsOn": [
+					{
+						"activity": "Lookup API Targets",
+						"dependencyConditions": [
+							"Succeeded"
+						]
+					}
+				],
+				"userProperties": [],
+				"typeProperties": {
+					"items": {
+						"value": "@activity('Lookup API Targets').output.value",
+						"type": "Expression"
+					},
+					"condition": {
+						"value": "@equals(item().firm_id, pipeline().parameters.firmId)",
+						"type": "Expression"
+					}
+				}
+			},
+			{
+				"name": "ForEach API Call",
+				"type": "ForEach",
+				"dependsOn": [
+					{
+						"activity": "Filter Records For This Firm",
+						"dependencyConditions": [
+							"Succeeded"
+						]
+					}
+				],
+				"userProperties": [],
+				"typeProperties": {
+					"items": {
+						"value": "@activity('Filter Records For This Firm').output.value",
+						"type": "Expression"
+					},
+					"isSequential": false,
+					"batchCount": 5,
+					"activities": [
+						{
+							"name": "Call Silverfin API",
+							"type": "WebActivity",
+							"dependsOn": [],
+							"policy": {
+								"timeout": "0.00:05:00",
+								"retry": 2,
+								"retryIntervalInSeconds": 30
+							},
+							"userProperties": [],
+							"typeProperties": {
+								"method": "GET",
+								"headers": {
+									"Accept": "application/json",
+									"Authorization": {
+										"value": "@concat('Bearer ', variables('accessToken'))",
+										"type": "Expression"
+									}
+								},
+								"url": {
+									"value": "@concat('https://live.getsilverfin.com/api/v4/f/', string(item().firm_id), '/companies/', string(item().company_id), '/periods/', string(item().period_id), '/accounts/', string(item().account_id), '/custom')",
+									"type": "Expression"
+								}
+							}
+						},
+						{
+							"name": "Write To Blob Storage",
+							"description": "Write API response directly to Blob Storage using REST API",
+							"type": "WebActivity",
+							"dependsOn": [
+								{
+									"activity": "Call Silverfin API",
+									"dependencyConditions": [
+										"Succeeded"
+									]
+								}
+							],
+							"policy": {
+								"timeout": "0.00:05:00",
+								"retry": 2,
+								"retryIntervalInSeconds": 30
+							},
+							"userProperties": [],
+							"typeProperties": {
+								"method": "PUT",
+								"headers": {
+									"x-ms-blob-type": "BlockBlob",
+									"Content-Type": "application/json",
+									"x-ms-version": "2020-10-02"
+								},
+								"url": {
+									"value": "@concat('https://', pipeline().parameters.storageAccountName, '.blob.core.windows.net/', pipeline().parameters.containerName, '/silverfin/output/firm_', string(item().firm_id), '/company_', string(item().company_id), '/period_', string(item().period_id), '/account_', string(item().account_id), '_', formatDateTime(utcnow(), 'yyyyMMddHHmmss'), '.json')",
+									"type": "Expression"
+								},
+								"body": {
+									"value": "@json(concat('{\"metadata\":{\"firm_id\":', string(item().firm_id), ',\"company_id\":', string(item().company_id), ',\"period_id\":', string(item().period_id), ',\"account_id\":', string(item().account_id), ',\"fetched_at\":\"', utcnow(), '\"},\"data\":', string(activity('Call Silverfin API').output), '}'))",
+									"type": "Expression"
+								},
+								"authentication": {
+									"type": "MSI",
+									"resource": "https://storage.azure.com/"
+								}
+							}
+						}
+					]
+				}
+			}
+		],
+		"parameters": {
+			"firmId": {
+				"type": "int",
+				"defaultValue": 12345
+			},
+			"storageAccountName": {
+				"type": "string",
+				"defaultValue": "stweupiabesandboxtest"
+			},
+			"containerName": {
+				"type": "string",
+				"defaultValue": "adf-data"
+			}
+		},
+		"variables": {
+			"accessToken": {
+				"type": "String"
+			}
+		},
+		"annotations": [
+			"silverfin",
+			"oauth2",
+			"production"
+		],
+		"lastPublishTime": "2026-01-30T14:42:07Z"
+	},
+	"type": "Microsoft.DataFactory/factories/pipelines"
+}

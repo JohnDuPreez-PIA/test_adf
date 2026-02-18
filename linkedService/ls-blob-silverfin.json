@@ -1,0 +1,14 @@
+{
+	"name": "ls-blob-silverfin",
+	"type": "Microsoft.DataFactory/factories/linkedservices",
+	"properties": {
+		"type": "AzureBlobStorage",
+		"typeProperties": {
+			"serviceEndpoint": "https://stweupiabesandboxtest.blob.core.windows.net",
+			"accountKind": "StorageV2",
+			"authenticationType": "ManagedIdentity"
+		},
+		"description": "Azure Blob Storage for Silverfin lookup table and output data",
+		"annotations": []
+	}
+}

@@ -1,0 +1,30 @@
+{
+	"name": "ls_databricks_test",
+	"type": "Microsoft.DataFactory/factories/linkedservices",
+	"properties": {
+		"type": "AzureDatabricks",
+		"description": "Azure Databricks linked service for ExpertM bronze load. Uses PAT from Key Vault and ephemeral job clusters.",
+		"typeProperties": {
+			"domain": "https://adb-4084743035122178.18.azuredatabricks.net",
+			"accessToken": {
+				"type": "AzureKeyVaultSecret",
+				"store": {
+					"type": "LinkedServiceReference",
+					"referenceName": "ls-kv-pia-be-test"
+				},
+				"secretName": "Databricks-PAT"
+			},
+			"newClusterVersion": "14.3.x-scala2.12",
+			"newClusterNumOfWorker": "0",
+			"newClusterNodeType": "Standard_D4s_v3",
+			"newClusterSparkConf": {
+				"spark.databricks.delta.schema.autoMerge.enabled": "true"
+			},
+			"newClusterSparkEnvVars": {
+				"PYSPARK_PYTHON": "/databricks/python3/bin/python3"
+			},
+			"policyId": "001E3761698CA4BC"
+		},
+		"annotations": []
+	}
+}

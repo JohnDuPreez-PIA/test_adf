@@ -1,0 +1,27 @@
+{
+	"name": "tr_daily_exactonline",
+	"properties": {
+		"annotations": [],
+		"runtimeState": "Started",
+		"pipelines": [
+			{
+				"pipelineReference": {
+					"referenceName": "pl_master_exactonline",
+					"type": "PipelineReference"
+				},
+				"parameters": {
+					"p_ModifiedSince": "@formatDateTime(adddays(trigger().scheduledTime, -30), 'yyyy-MM-ddTHH:mm:ss')"
+				}
+			}
+		],
+		"type": "ScheduleTrigger",
+		"typeProperties": {
+			"recurrence": {
+				"frequency": "Day",
+				"interval": 1,
+				"startTime": "2026-02-10T04:00:00",
+				"timeZone": "Romance Standard Time"
+			}
+		}
+	}
+}

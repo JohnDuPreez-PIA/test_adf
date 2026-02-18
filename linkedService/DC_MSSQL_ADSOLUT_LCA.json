@@ -1,0 +1,22 @@
+{
+	"name": "DC_MSSQL_ADSOLUT_LCA",
+	"type": "Microsoft.DataFactory/factories/linkedservices",
+	"properties": {
+		"description": "Data connector to MSSQL_ADSOLUT_LCA",
+		"annotations": [],
+		"type": "Odbc",
+		"typeProperties": {
+			"connectionString": {
+				"type": "SecureString",
+				"value": "**********"
+			},
+			"authenticationType": "Basic",
+			"userName": "locpia",
+			"encryptedCredential": "eyJDcmVkZW50aWFsSWQiOiI5MjFhMjhkMi0xOGZmLTQyNDktOWFmZS1lZDI1MmZlN2U1YzIiLCJWZXJzaW9uIjoiMi4wIiwiQ2xhc3NUeXBlIjoiTWljcm9zb2Z0LkRhdGFQcm94eS5Db3JlLkludGVyU2VydmljZURhdGFDb250cmFjdC5DcmVkZW50aWFsU1UwNkNZMTQifQ=="
+		},
+		"connectVia": {
+			"referenceName": "DW01",
+			"type": "IntegrationRuntimeReference"
+		}
+	}
+}

@@ -1,0 +1,155 @@
+{
+	"name": "pl_master_exactonline",
+	"properties": {
+		"activities": [
+			{
+				"name": "SetYears",
+				"type": "SetVariable",
+				"dependsOn": [],
+				"policy": {
+					"secureOutput": false,
+					"secureInput": false
+				},
+				"userProperties": [],
+				"typeProperties": {
+					"variableName": "v_Years",
+					"value": {
+						"value": "@createArray(sub(int(formatDateTime(utcNow(), 'yyyy')), 2), sub(int(formatDateTime(utcNow(), 'yyyy')), 1), int(formatDateTime(utcNow(), 'yyyy')), add(int(formatDateTime(utcNow(), 'yyyy')), 1))",
+						"type": "Expression"
+					}
+				}
+			},
+			{
+				"name": "ForEachDivision",
+				"type": "ForEach",
+				"dependsOn": [
+					{
+						"activity": "SetYears",
+						"dependencyConditions": [
+							"Succeeded"
+						]
+					}
+				],
+				"userProperties": [],
+				"typeProperties": {
+					"items": {
+						"value": "@pipeline().parameters.p_Divisions",
+						"type": "Expression"
+					},
+					"isSequential": true,
+					"activities": [
+						{
+							"name": "ExtractFinance",
+							"type": "ExecutePipeline",
+							"dependsOn": [],
+							"policy": {
+								"secureInput": false
+							},
+							"userProperties": [],
+							"typeProperties": {
+								"pipeline": {
+									"referenceName": "pl_extract_finance",
+									"type": "PipelineReference"
+								},
+								"waitOnCompletion": true,
+								"parameters": {
+									"p_DivisionCode": {
+										"value": "@item()",
+										"type": "Expression"
+									},
+									"p_Years": {
+										"value": "@variables('v_Years')",
+										"type": "Expression"
+									},
+									"p_ModifiedSince": {
+										"value": "@pipeline().parameters.p_ModifiedSince",
+										"type": "Expression"
+									}
+								}
+							}
+						}
+					]
+				}
+			},
+			{
+				"name": "ExtractOperations",
+				"type": "ExecutePipeline",
+				"dependsOn": [
+					{
+						"activity": "ForEachDivision",
+						"dependencyConditions": [
+							"Completed"
+						]
+					}
+				],
+				"policy": {
+					"secureInput": false
+				},
+				"userProperties": [],
+				"typeProperties": {
+					"pipeline": {
+						"referenceName": "pl_extract_operations",
+						"type": "PipelineReference"
+					},
+					"waitOnCompletion": true,
+					"parameters": {
+						"p_ModifiedSince": {
+							"value": "@pipeline().parameters.p_ModifiedSince",
+							"type": "Expression"
+						}
+					}
+				}
+			},
+			{
+				"name": "RunDatabricksBronzeLoad",
+				"type": "DatabricksNotebook",
+				"dependsOn": [
+					{
+						"activity": "ExtractOperations",
+						"dependencyConditions": [
+							"Completed"
+						]
+					}
+				],
+				"policy": {
+					"timeout": "04:00:00",
+					"retry": 1,
+					"retryIntervalInSeconds": 300
+				},
+				"userProperties": [],
+				"typeProperties": {
+					"notebookPath": "/Shared/exactonline/nb_exactonline_bronze_load"
+				},
+				"linkedServiceName": {
+					"referenceName": "ls_databricks_test",
+					"type": "LinkedServiceReference"
+				}
+			}
+		],
+		"parameters": {
+			"p_Divisions": {
+				"type": "Array",
+				"defaultValue": [
+					1070950,
+					1109346,
+					1131744,
+					1217756,
+					1217757,
+					1217645,
+					1217761
+				]
+			},
+			"p_ModifiedSince": {
+				"type": "String"
+			}
+		},
+		"variables": {
+			"v_Years": {
+				"type": "Array"
+			}
+		},
+		"annotations": [],
+		"lastPublishTime": "2026-02-17T13:29:27Z"
+	},
+	"type": "Microsoft.DataFactory/factories/pipelines"
+}

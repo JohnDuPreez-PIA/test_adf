@@ -1,0 +1,39 @@
+{
+	"name": "ds-silverfin-lookup",
+	"properties": {
+		"description": "Lookup table containing firm, company, period, and account IDs to process",
+		"linkedServiceName": {
+			"referenceName": "ls-blob-silverfin",
+			"type": "LinkedServiceReference"
+		},
+		"annotations": [],
+		"type": "Json",
+		"typeProperties": {
+			"location": {
+				"type": "AzureBlobStorageLocation",
+				"fileName": "lookup-table.json",
+				"folderPath": "silverfin/config",
+				"container": "adf-data"
+			}
+		},
+		"schema": [
+			{
+				"name": "firm_id",
+				"type": "Integer"
+			},
+			{
+				"name": "company_id",
+				"type": "Integer"
+			},
+			{
+				"name": "period_id",
+				"type": "Integer"
+			},
+			{
+				"name": "account_id",
+				"type": "Integer"
+			}
+		]
+	},
+	"type": "Microsoft.DataFactory/factories/datasets"
+}

@@ -1,0 +1,9 @@
+{
+	"name": "adf-pia-be-test",
+	"location": "westeurope",
+	"identity": {
+		"type": "SystemAssigned",
+		"principalId": "06752512-ba11-4ee5-b0c6-32e0d3d2bd05",
+		"tenantId": "4ff2c5d7-941b-4e1f-b242-3eafd2fa9ea9"
+	}
+}

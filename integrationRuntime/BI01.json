@@ -1,0 +1,7 @@
+{
+	"name": "BI01",
+	"properties": {
+		"type": "SelfHosted",
+		"description": "BI01 PIA hosted machine"
+	}
+}

@@ -1,0 +1,30 @@
+{
+	"name": "tr_daily_extract",
+	"properties": {
+		"description": "Daily incremental extraction of ExpertM databases. Passes window start time as watermark for incremental loads.",
+		"annotations": [],
+		"runtimeState": "Started",
+		"pipeline": {
+			"pipelineReference": {
+				"referenceName": "pl_expertm_extract",
+				"type": "PipelineReference"
+			},
+			"parameters": {
+				"watermark": "@trigger().outputs.windowStartTime"
+			}
+		},
+		"type": "TumblingWindowTrigger",
+		"typeProperties": {
+			"frequency": "Hour",
+			"interval": 24,
+			"startTime": "2026-02-07T02:00:00Z",
+			"delay": "00:00:00",
+			"maxConcurrency": 1,
+			"retryPolicy": {
+				"count": 2,
+				"intervalInSeconds": 300
+			},
+			"dependsOn": []
+		}
+	}
+}

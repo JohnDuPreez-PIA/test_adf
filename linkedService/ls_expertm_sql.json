@@ -1,0 +1,25 @@
+{
+	"name": "ls_expertm_sql",
+	"type": "Microsoft.DataFactory/factories/linkedservices",
+	"properties": {
+		"type": "SqlServer",
+		"connectVia": {
+			"referenceName": "BI01",
+			"type": "IntegrationRuntimeReference"
+		},
+		"description": "SQL Server connection to ExpertM databases via self-hosted IR BI01",
+		"typeProperties": {
+			"connectionString": "Server=pia-dco-sql\\kluwer;Database=master;User ID=qlikcloudconnectSQL;",
+			"authenticationType": "SQL",
+			"password": {
+				"type": "AzureKeyVaultSecret",
+				"store": {
+					"type": "LinkedServiceReference",
+					"referenceName": "ls-kv-pia-be-test"
+				},
+				"secretName": "ExpertM-SQL-Password"
+			}
+		},
+		"annotations": []
+	}
+}

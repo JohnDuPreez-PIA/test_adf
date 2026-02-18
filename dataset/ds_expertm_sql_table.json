@@ -1,0 +1,24 @@
+{
+	"name": "ds_expertm_sql_table",
+	"properties": {
+		"linkedServiceName": {
+			"referenceName": "ls_expertm_sql",
+			"type": "LinkedServiceReference"
+		},
+		"parameters": {
+			"tableName": {
+				"type": "String"
+			}
+		},
+		"annotations": [],
+		"type": "SqlServerTable",
+		"typeProperties": {
+			"schema": "dbo",
+			"table": {
+				"value": "@dataset().tableName",
+				"type": "Expression"
+			}
+		}
+	},
+	"type": "Microsoft.DataFactory/factories/datasets"
+}

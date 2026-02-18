@@ -1,0 +1,258 @@
+{
+	"name": "pl_extract_finance",
+	"properties": {
+		"activities": [
+			{
+				"name": "ExtractCRMAccounts",
+				"type": "ExecutePipeline",
+				"dependsOn": [],
+				"policy": {
+					"secureInput": false
+				},
+				"userProperties": [],
+				"typeProperties": {
+					"pipeline": {
+						"referenceName": "pl_extract_entity",
+						"type": "PipelineReference"
+					},
+					"waitOnCompletion": true,
+					"parameters": {
+						"p_BaseUrl": {
+							"value": "@concat('https://start.exactonline.be/api/v1/', string(pipeline().parameters.p_DivisionCode), '/bulk/CRM/Accounts')",
+							"type": "Expression"
+						},
+						"p_SelectFields": "ID,Code,Accountant,Email,Language,City,AddressLine1,Name,VATNumber,IsSupplier,Status,Phone,Country,Postcode,StartDate,EndDate,CustomField",
+						"p_EntityName": "CRMAccounts",
+						"p_Division": {
+							"value": "@pipeline().parameters.p_DivisionCode",
+							"type": "Expression"
+						},
+						"p_SleepMs": 1001
+					}
+				}
+			},
+			{
+				"name": "ExtractGLAccounts",
+				"type": "ExecutePipeline",
+				"dependsOn": [
+					{
+						"activity": "ExtractCRMAccounts",
+						"dependencyConditions": [
+							"Completed"
+						]
+					}
+				],
+				"policy": {
+					"secureInput": false
+				},
+				"userProperties": [],
+				"typeProperties": {
+					"pipeline": {
+						"referenceName": "pl_extract_entity",
+						"type": "PipelineReference"
+					},
+					"waitOnCompletion": true,
+					"parameters": {
+						"p_BaseUrl": {
+							"value": "@concat('https://start.exactonline.be/api/v1/', string(pipeline().parameters.p_DivisionCode), '/bulk/Financial/GLAccounts')",
+							"type": "Expression"
+						},
+						"p_SelectFields": "ID,BalanceType,Code,Description,Division",
+						"p_EntityName": "GLAccounts",
+						"p_Division": {
+							"value": "@pipeline().parameters.p_DivisionCode",
+							"type": "Expression"
+						},
+						"p_SleepMs": 1001,
+						"p_ExtraHeaders": "{\"CustomDescriptionLanguage\":\"NL\"}"
+					}
+				}
+			},
+			{
+				"name": "ExtractDivisions",
+				"type": "ExecutePipeline",
+				"dependsOn": [
+					{
+						"activity": "ExtractGLAccounts",
+						"dependencyConditions": [
+							"Completed"
+						]
+					}
+				],
+				"policy": {
+					"secureInput": false
+				},
+				"userProperties": [],
+				"typeProperties": {
+					"pipeline": {
+						"referenceName": "pl_extract_entity",
+						"type": "PipelineReference"
+					},
+					"waitOnCompletion": true,
+					"parameters": {
+						"p_BaseUrl": {
+							"value": "@concat('https://start.exactonline.be/api/v1/', string(pipeline().parameters.p_DivisionCode), '/system/Divisions')",
+							"type": "Expression"
+						},
+						"p_SelectFields": "Code,Description",
+						"p_EntityName": "Divisions",
+						"p_Division": {
+							"value": "@pipeline().parameters.p_DivisionCode",
+							"type": "Expression"
+						},
+						"p_SleepMs": 1001
+					}
+				}
+			},
+			{
+				"name": "ExtractPeriods",
+				"type": "ExecutePipeline",
+				"dependsOn": [
+					{
+						"activity": "ExtractDivisions",
+						"dependencyConditions": [
+							"Completed"
+						]
+					}
+				],
+				"policy": {
+					"secureInput": false
+				},
+				"userProperties": [],
+				"typeProperties": {
+					"pipeline": {
+						"referenceName": "pl_extract_entity",
+						"type": "PipelineReference"
+					},
+					"waitOnCompletion": true,
+					"parameters": {
+						"p_BaseUrl": {
+							"value": "@concat('https://start.exactonline.be/api/v1/', string(pipeline().parameters.p_DivisionCode), '/financial/FinancialPeriods')",
+							"type": "Expression"
+						},
+						"p_SelectFields": "ID,Division,EndDate,FinPeriod,FinYear,StartDate",
+						"p_EntityName": "Periods",
+						"p_Division": {
+							"value": "@pipeline().parameters.p_DivisionCode",
+							"type": "Expression"
+						},
+						"p_SleepMs": 1001
+					}
+				}
+			},
+			{
+				"name": "ExtractJournals",
+				"type": "ExecutePipeline",
+				"dependsOn": [
+					{
+						"activity": "ExtractPeriods",
+						"dependencyConditions": [
+							"Completed"
+						]
+					}
+				],
+				"policy": {
+					"secureInput": false
+				},
+				"userProperties": [],
+				"typeProperties": {
+					"pipeline": {
+						"referenceName": "pl_extract_entity",
+						"type": "PipelineReference"
+					},
+					"waitOnCompletion": true,
+					"parameters": {
+						"p_BaseUrl": {
+							"value": "@concat('https://start.exactonline.be/api/v1/', string(pipeline().parameters.p_DivisionCode), '/financial/Journals')",
+							"type": "Expression"
+						},
+						"p_SelectFields": "Division,Code,Description,Type",
+						"p_EntityName": "Journals",
+						"p_Division": {
+							"value": "@pipeline().parameters.p_DivisionCode",
+							"type": "Expression"
+						},
+						"p_SleepMs": 1001
+					}
+				}
+			},
+			{
+				"name": "ForEachYear",
+				"type": "ForEach",
+				"dependsOn": [
+					{
+						"activity": "ExtractJournals",
+						"dependencyConditions": [
+							"Completed"
+						]
+					}
+				],
+				"userProperties": [],
+				"typeProperties": {
+					"items": {
+						"value": "@pipeline().parameters.p_Years",
+						"type": "Expression"
+					},
+					"isSequential": true,
+					"activities": [
+						{
+							"name": "ExtractTransactionLines",
+							"type": "ExecutePipeline",
+							"dependsOn": [],
+							"policy": {
+								"secureInput": false
+							},
+							"userProperties": [],
+							"typeProperties": {
+								"pipeline": {
+									"referenceName": "pl_extract_entity",
+									"type": "PipelineReference"
+								},
+								"waitOnCompletion": true,
+								"parameters": {
+									"p_BaseUrl": {
+										"value": "@concat('https://start.exactonline.be/api/v1/', string(pipeline().parameters.p_DivisionCode), '/bulk/Financial/TransactionLines')",
+										"type": "Expression"
+									},
+									"p_SelectFields": "ID,Account,AccountCode,AccountName,AmountDC,AmountFC,AmountVATBaseFC,AmountVATFC,Asset,AssetCode,AssetDescription,CostCenter,CostCenterDescription,CostUnit,CostUnitDescription,Created,Creator,CreatorFullName,Currency,Date,Description,Division,Document,DocumentNumber,DocumentSubject,DueDate,EntryID,EntryNumber,ExchangeRate,ExtraDutyAmountFC,ExtraDutyPercentage,FinancialPeriod,FinancialYear,GLAccount,GLAccountCode,GLAccountDescription,InvoiceNumber,Item,ItemCode,ItemDescription,JournalCode,JournalDescription,LineNumber,LineType,Modified,Modifier,ModifierFullName,Notes,OffsetID,OrderNumber,PaymentDiscountAmount,PaymentReference,Project,ProjectCode,ProjectDescription,Quantity,SerialNumber,Status,Subscription,SubscriptionDescription,TrackingNumber,TrackingNumberDescription,Type,VATCode,VATCodeDescription,VATPercentage,VATType,YourRef",
+									"p_EntityName": "TransactionLines",
+									"p_Division": {
+										"value": "@pipeline().parameters.p_DivisionCode",
+										"type": "Expression"
+									},
+									"p_FilterExpr": {
+										"value": "@concat('FinancialYear eq ', string(item()))",
+										"type": "Expression"
+									},
+									"p_SleepMs": 1001,
+									"p_FinancialYear": {
+										"value": "@int(item())",
+										"type": "Expression"
+									},
+									"p_ModifiedSince": {
+										"value": "@pipeline().parameters.p_ModifiedSince",
+										"type": "Expression"
+									}
+								}
+							}
+						}
+					]
+				}
+			}
+		],
+		"parameters": {
+			"p_DivisionCode": {
+				"type": "Int"
+			},
+			"p_Years": {
+				"type": "Array"
+			},
+			"p_ModifiedSince": {
+				"type": "String"
+			}
+		},
+		"annotations": [],
+		"lastPublishTime": "2026-02-17T13:29:25Z"
+	},
+	"type": "Microsoft.DataFactory/factories/pipelines"
+}

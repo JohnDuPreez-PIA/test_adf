@@ -1,0 +1,22 @@
+{
+	"name": "DC_SQLANYWHERE_ADSOLUT_ACCOFISC",
+	"type": "Microsoft.DataFactory/factories/linkedservices",
+	"properties": {
+		"description": "ACCOFISC DIRECT CONNECTION VIA IR",
+		"annotations": [],
+		"type": "Odbc",
+		"typeProperties": {
+			"connectionString": {
+				"type": "SecureString",
+				"value": "**********"
+			},
+			"authenticationType": "Basic",
+			"userName": "ACRO_Accofisc",
+			"encryptedCredential": "eyJDcmVkZW50aWFsSWQiOiJiYWQ0MDExOS00Yzg2LTQxYWEtYjJjYi01NTYyMzRhOTdiMWUiLCJWZXJzaW9uIjoiMi4wIiwiQ2xhc3NUeXBlIjoiTWljcm9zb2Z0LkRhdGFQcm94eS5Db3JlLkludGVyU2VydmljZURhdGFDb250cmFjdC5DcmVkZW50aWFsU1UwNkNZMTQifQ=="
+		},
+		"connectVia": {
+			"referenceName": "PIA83-ACC",
+			"type": "IntegrationRuntimeReference"
+		}
+	}
+}
