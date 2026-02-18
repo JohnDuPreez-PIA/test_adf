@@ -3,44 +3,14 @@
 	"properties": {
 		"activities": [
 			{
-				"name": "GetDivisions",
-				"type": "AzureFunctionActivity",
-				"linkedServiceName": {
-					"referenceName": "ls_func_exactonline",
-					"type": "LinkedServiceReference"
-				},
-				"typeProperties": {
-					"functionName": "get_divisions",
-					"method": "GET"
-				},
-				"policy": {
-					"timeout": "00:02:00",
-					"retry": 1,
-					"retryIntervalInSeconds": 30
-				}
-			},
-			{
-				"name": "SetDivisions",
-				"type": "SetVariable",
-				"dependsOn": [
-					{
-						"activity": "GetDivisions",
-						"dependencyConditions": [
-							"Succeeded"
-						]
-					}
-				],
-				"typeProperties": {
-					"variableName": "v_Divisions",
-					"value": {
-						"value": "@activity('GetDivisions').output.divisions",
-						"type": "Expression"
-					}
-				}
-			},
-			{
 				"name": "SetYears",
 				"type": "SetVariable",
+				"dependsOn": [],
+				"policy": {
+					"secureOutput": false,
+					"secureInput": false
+				},
+				"userProperties": [],
 				"typeProperties": {
 					"variableName": "v_Years",
 					"value": {
@@ -58,24 +28,24 @@
 						"dependencyConditions": [
 							"Succeeded"
 						]
-					},
-					{
-						"activity": "SetDivisions",
-						"dependencyConditions": [
-							"Succeeded"
-						]
 					}
 				],
+				"userProperties": [],
 				"typeProperties": {
-					"isSequential": true,
 					"items": {
-						"value": "@if(greater(length(pipeline().parameters.p_Divisions), 0), pipeline().parameters.p_Divisions, variables('v_Divisions'))",
+						"value": "@pipeline().parameters.p_Divisions",
 						"type": "Expression"
 					},
+					"isSequential": true,
 					"activities": [
 						{
 							"name": "ExtractFinance",
 							"type": "ExecutePipeline",
+							"dependsOn": [],
+							"policy": {
+								"secureInput": false
+							},
+							"userProperties": [],
 							"typeProperties": {
 								"pipeline": {
 									"referenceName": "pl_extract_finance",
@@ -112,6 +82,10 @@
 						]
 					}
 				],
+				"policy": {
+					"secureInput": false
+				},
+				"userProperties": [],
 				"typeProperties": {
 					"pipeline": {
 						"referenceName": "pl_extract_operations",
@@ -137,35 +111,41 @@
 						]
 					}
 				],
-				"linkedServiceName": {
-					"referenceName": "ls_databricks_test",
-					"type": "LinkedServiceReference"
-				},
-				"typeProperties": {
-					"notebookPath": "/Shared/exactonline/nb_exactonline_bronze_load"
-				},
 				"policy": {
 					"timeout": "04:00:00",
 					"retry": 1,
 					"retryIntervalInSeconds": 300
+				},
+				"userProperties": [],
+				"typeProperties": {
+					"notebookPath": "/Shared/exactonline/nb_exactonline_bronze_load"
+				},
+				"linkedServiceName": {
+					"referenceName": "ls_databricks_test",
+					"type": "LinkedServiceReference"
 				}
 			}
 		],
 		"parameters": {
 			"p_Divisions": {
 				"type": "Array",
-				"defaultValue": []
+				"defaultValue": [
+					1070950,
+					1109346,
+					1131744,
+					1217756,
+					1217757,
+					1217645,
+					1217761,
+					1224437
+				]
 			},
 			"p_ModifiedSince": {
-				"type": "String",
-				"defaultValue": ""
+				"type": "String"
 			}
 		},
 		"variables": {
 			"v_Years": {
-				"type": "Array"
-			},
-			"v_Divisions": {
 				"type": "Array"
 			}
 		},
